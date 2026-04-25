@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Calorie Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;600;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0e0e10; --surface:#17151a; --border:#242228;
+    --text:#f0ece6; --muted:#888; --dim:#444;
+    --purple:#a78bfa; --purple-bg:#2a1f3a; --purple-dim:#6d5fa0;
+    --green:#6ee7b7; --green-bg:#14532d;
+    --red:#f87171; --yellow:#fcd34d; --orange:#fb923c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+  body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height:100vh;}
+  ::placeholder{color:var(--dim);}
+  input,select,button{font-family:'DM Sans',sans-serif;}
+  input:focus,select:focus{outline:none;}
+  .serif{font-family:'Fraunces',serif;}
+  .header{background:var(--surface);padding:18px 18px 0;flex-shrink:0;position:sticky;top:0;z-index:10;}
+  .body{flex:1;overflow-y:auto;padding:16px 16px 90px;}
+  .tab-bar{display:flex;border-top:1px solid var(--border);}
+  .tab-btn{flex:1;padding:9px 2px;background:none;border:none;border-top:2px solid transparent;color:var(--dim);font-size:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s;}
+  .tab-btn.active{color:var(--text);border-top-color:var(--purple);}
+  .tab-btn .ico{font-size:15px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;}
+  .label{font-size:10px;letter-spacing:2px;color:var(--muted);font-weight:600;margin-bottom:8px;}
+  .inp{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text);}
+  .inp:focus{border-color:var(--purple);}
+  .btn-primary{width:100%;background:var(--purple);border:none;border-radius:10px;padding:13px;color:#0e0e10;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+  .btn-primary:disabled{background:var(--border);color:var(--dim);cursor:not-allowed;}
+  .btn-ghost{width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:11px;color:var(--dim);font-size:12px;cursor:pointer;letter-spacing:1.5px;}
+  .btn-save{width:100%;background:var(--purple);border:none;border-radius:12px;padding:14px;color:#0e0e10;font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;margin-bottom:10px;}
+  .btn-save.saved{background:var(--green-bg);color:var(--green);}
+  .opt-btn{display:flex;justify-content:space-between;align-items:center;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer;text-align:left;margin-bottom:8px;transition:all .15s;}
+  .opt-btn.active{border-color:var(--purple);background:var(--purple-bg);}
+  .opt-btn .opt-title{font-size:14px;font-weight:600;color:var(--muted);}
+  .opt-btn.active .opt-title{color:var(--purple);}
+  .opt-btn .opt-desc{font-size:11px;color:var(--dim);margin-top:2px;}
+  .opt-check{color:var(--purple);font-size:16px;display:none;}
+  .opt-btn.active .opt-check{display:block;}
+  .sex-btn{flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--muted);font-size:13px;font-weight:400;cursor:pointer;transition:all .15s;}
+  .sex-btn.active{border-color:var(--purple);background:var(--purple-bg);color:var(--purple);font-weight:600;}
+  .meal-pill{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:99px;background:var(--border);border:none;cursor:pointer;transition:all .15s;}
+  .meal-pill.active{background:var(--text);}
+  .meal-pill .pname{font-size:11px;font-weight:600;color:var(--muted);}
+  .meal-pill.active .pname{color:#0e0e10;}
+  .meal-pill .pcal{font-size:10px;color:var(--dim);margin-left:2px;}
+  .meal-pill.active .pcal{color:#555;}
+  .entry-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);}
+  .entry-row:last-child{border-bottom:none;}
+  .del-btn{opacity:0;background:none;border:none;font-size:20px;color:var(--dim);cursor:pointer;padding:0 4px;transition:opacity .15s;}
+  .entry-row:hover .del-btn,.entry-row:active .del-btn{opacity:1;}
+  .entry-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .entry-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .preview-box{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none;}
+  .preview-box.show{display:block;}
+  .tl-dot{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--purple);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:9px;z-index:1;margin-top:3px;}
+  .tl-line{position:absolute;left:10px;top:8px;bottom:8px;width:2px;background:var(--border);border-radius:99px;}
+  .bar-track{background:var(--border);border-radius:99px;height:5px;margin-top:4px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:99px;background:var(--purple);transition:width .5s ease;}
+  .prog-bar-track{background:var(--border);border-radius:99px;height:8px;overflow:hidden;margin-bottom:6px;}
+  .prog-bar-fill{height:100%;border-radius:99px;transition:width .5s ease,background .4s ease;}
+  .goal-preview{background:#1a1024;border:1px solid var(--purple-bg);border-radius:14px;padding:16px;margin-bottom:20px;display:none;}
+  .goal-preview.show{display:block;}
+  select.inp{appearance:none;-webkit-appearance:none;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .fade-up{animation:fadeUp .22s ease;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .blink{animation:blink .9s ease infinite;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .p-row{margin-bottom:10px;}
+  .p-row label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;}
+  .section-title{font-size:10px;letter-spacing:2px;color:var(--dim);font-weight:600;margin-bottom:12px;}
+  .p-section{margin-bottom:24px;}
+  .scrollx{display:flex;gap:6px;overflow-x:auto;padding-bottom:14px;scrollbar-width:none;}
+  .scrollx::-webkit-scrollbar{display:none;}
+  .error-msg{margin-top:10px;font-size:12px;color:var(--red);font-style:italic;display:none;}
+  .error-msg.show{display:block;}
+  .empty{text-align:center;padding:48px 0;color:#333;font-size:14px;font-style:italic;font-family:'Fraunces',serif;}
+  .confirm-btn{background:var(--green-bg);border:none;border-radius:10px;padding:10px 16px;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;}
+  .sum-stat{text-align:center;}
+  .sum-val{font-family:'Fraunces',serif;font-size:22px;font-weight:700;margin-top:4px;}
+  /* History styles */
+  .hist-day{background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden;}
+  .hist-day-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer;}
+  .hist-day-header:active{background:#1e1c22;}
+  .hist-day-body{display:none;border-top:1px solid var(--border);}
+  .hist-day-body.open{display:block;}
+  .hist-entry{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);}
+  .hist-entry:last-child{border-bottom:none;}
+  .week-avg{background:#1a1024;border:1px solid var(--purple-bg);border-radius:14px;padding:14px 16px;margin-bottom:16px;}
+  .streak-badge{display:inline-flex;align-items:center;gap:5px;background:var(--purple-bg);border:1px solid var(--purple-dim);border-radius:99px;padding:5px 12px;font-size:12px;color:var(--purple);font-weight:600;}
+  .mini-bar{height:48px;display:flex;align-items:flex-end;gap:3px;}
+  .mini-bar-col{flex:1;border-radius:4px 4px 0 0;min-height:3px;transition:height .4s ease;}
+  .chart-wrap{display:flex;gap:3px;align-items:flex-end;height:60px;margin:8px 0 4px;}
+  .chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .chart-bar{width:100%;border-radius:4px 4px 0 0;min-height:3px;}
+  .chart-lbl{font-size:9px;color:var(--dim);letter-spacing:0;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div id="hd-tracker">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div class="serif" style="font-size:22px;font-weight:800;line-height:1.1" id="greeting">Daily Tracker</div>
+        <div style="font-size:11px;color:var(--dim);margin-top:3px;letter-spacing:1.5px" id="dateline"></div>
+      </div>
+      <button id="setup-notice-btn" onclick="showTab('profile')" style="background:#2a1f3a;border:1px solid #3d2d5a;border-radius:10px;padding:7px 12px;font-size:11px;color:var(--purple);cursor:pointer;display:none">Set up →</button>
+    </div>
+    <div style="margin-bottom:4px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span class="serif" style="font-size:34px;font-weight:800;line-height:1" id="total-disp">0</span>
+        <span style="font-size:12px;color:var(--muted)">/ <span id="goal-disp">2000</span> kcal</span>
+      </div>
+      <div class="prog-bar-track"><div class="prog-bar-fill" id="prog-bar" style="width:0%;background:var(--green)"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px">
+        <span style="font-size:11px" id="remaining-disp">2000 left</span>
+        <span style="font-size:11px;color:var(--dim)" id="pct-disp">0%</span>
+      </div>
+    </div>
+    <div class="scrollx" id="meal-pills"></div>
+  </div>
+  <div id="hd-log" style="display:none;padding-bottom:16px">
+    <div class="serif" style="font-size:22px;font-weight:800">Today's Log</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:3px;letter-spacing:1.5px" id="log-sub">0 ENTRIES</div>
+  </div>
+  <div id="hd-history" style="display:none;padding-bottom:16px">
+    <div class="serif" style="font-size:22px;font-weight:800">History</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:3px;letter-spacing:1.5px" id="hist-sub">PAST DAYS</div>
+  </div>
+  <div id="hd-profile" style="display:none;padding-bottom:16px">
+    <div class="serif" style="font-size:22px;font-weight:800">My Profile</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:3px;letter-spacing:1.5px">PERSONALISE YOUR GOAL</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tb-tracker" onclick="showTab('tracker')"><span class="ico">⚡</span>Tracker</button>
+    <button class="tab-btn" id="tb-log" onclick="showTab('log')"><span class="ico">📋</span>Log</button>
+    <button class="tab-btn" id="tb-history" onclick="showTab('history')"><span class="ico">📅</span>History</button>
+    <button class="tab-btn" id="tb-profile" onclick="showTab('profile')"><span class="ico">👤</span>Profile</button>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- TRACKER -->
+  <div id="tab-tracker" class="fade-up">
+    <div class="card">
+      <div class="label" id="meal-label">LOGGING FOR — 🌅 BREAKFAST</div>
+      <input class="inp" id="food-input" placeholder='e.g. "two eggs on toast"' style="margin-bottom:10px" onkeydown="onInputKey(event)"/>
+      <button class="btn-primary" id="est-btn" onclick="doEstimate()">Estimate Calories →</button>
+      <div class="preview-box" id="preview-box">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div>
+            <div class="serif" style="font-size:30px;font-weight:800;line-height:1"><span id="prev-cal">0</span> <span style="font-size:13px;color:var(--muted);font-weight:300">kcal</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px" id="prev-portion"></div>
+            <div style="font-size:11px;color:var(--dim);margin-top:3px;font-style:italic" id="prev-note"></div>
+          </div>
+          <button class="confirm-btn" onclick="confirmAdd()">✓ Log it</button>
+        </div>
+      </div>
+      <div class="error-msg" id="err-msg">Couldn't estimate — try rephrasing</div>
+    </div>
+    <div id="tracker-entries"></div>
+    <div class="empty" id="tracker-empty">Nothing logged yet today</div>
+    <button class="btn-ghost" id="reset-btn" onclick="resetDay()" style="display:none;margin-top:4px">RESET DAY</button>
+  </div>
+
+  <!-- LOG -->
+  <div id="tab-log" style="display:none" class="fade-up">
+    <div class="card">
+      <div class="label">BREAKDOWN BY MEAL</div>
+      <div id="meal-breakdown"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+        <div class="sum-stat"><div style="font-size:10px;color:var(--dim);letter-spacing:1px">TOTAL</div><div class="sum-val" id="sum-total">0</div></div>
+        <div class="sum-stat"><div style="font-size:10px;color:var(--dim);letter-spacing:1px">GOAL</div><div class="sum-val" id="sum-goal">2000</div></div>
+        <div class="sum-stat"><div style="font-size:10px;color:var(--dim);letter-spacing:1px" id="sum-label">LEFT</div><div class="sum-val" id="sum-rem" style="color:var(--green)">2000</div></div>
+      </div>
+    </div>
+    <div class="label" style="margin-bottom:12px">TIMELINE</div>
+    <div id="timeline" style="position:relative"></div>
+    <div class="empty" id="log-empty">No entries yet — add food in Tracker</div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="tab-history" style="display:none" class="fade-up">
+    <!-- 7-day chart -->
+    <div class="card" id="hist-chart-card">
+      <div class="label">LAST 7 DAYS</div>
+      <div class="chart-wrap" id="hist-chart"></div>
+      <div style="display:flex;gap:3px" id="hist-chart-labels"></div>
+    </div>
+    <!-- weekly stats -->
+    <div class="week-avg" id="hist-stats">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div class="sum-stat"><div style="font-size:10px;color:var(--purple-dim);letter-spacing:1px">7-DAY AVG</div><div class="sum-val" id="hist-avg" style="color:var(--purple)">—</div></div>
+        <div class="sum-stat"><div style="font-size:10px;color:var(--purple-dim);letter-spacing:1px">BEST DAY</div><div class="sum-val" id="hist-best" style="color:var(--green)">—</div></div>
+        <div class="sum-stat"><div style="font-size:10px;color:var(--purple-dim);letter-spacing:1px">DAYS LOGGED</div><div class="sum-val" id="hist-days" style="color:var(--text)">0</div></div>
+        <div class="sum-stat"><div style="font-size:10px;color:var(--purple-dim);letter-spacing:1px">STREAK 🔥</div><div class="sum-val" id="hist-streak" style="color:var(--orange)">0</div></div>
+      </div>
+    </div>
+    <!-- daily accordion -->
+    <div class="label" style="margin-bottom:12px">DAILY BREAKDOWN</div>
+    <div id="hist-days-list"></div>
+    <div class="empty" id="hist-empty">No history yet — start logging food!</div>
+  </div>
+
+  <!-- PROFILE -->
+  <div id="tab-profile" style="display:none" class="fade-up">
+    <div class="p-section">
+      <div class="section-title">BASICS</div>
+      <div class="p-row"><label>Name (optional)</label><input class="inp" id="p-name" placeholder="e.g. Alex"/></div>
+      <div class="two-col">
+        <div class="p-row"><label>Age</label><input class="inp" id="p-age" type="number" placeholder="28" oninput="updateGoalPreview()"/></div>
+        <div class="p-row"><label id="p-weight-lbl">Weight (kg)</label><input class="inp" id="p-weight" type="number" placeholder="72" oninput="updateGoalPreview()"/></div>
+      </div>
+      <div class="two-col">
+        <div class="p-row"><label id="p-height-lbl">Height (cm)</label><input class="inp" id="p-height" type="number" placeholder="175" oninput="updateGoalPreview()"/></div>
+        <div class="p-row"><label>Units</label>
+          <select class="inp" id="p-units" onchange="updateUnitsLabels()">
+            <option value="metric">Metric (kg/cm)</option>
+            <option value="imperial">Imperial (lbs/in)</option>
+          </select>
+        </div>
+      </div>
+      <div class="p-row"><label>Sex</label>
+        <div style="display:flex;gap:8px">
+          <button class="sex-btn active" id="sex-male" onclick="setSex('male')">♂ Male</button>
+          <button class="sex-btn" id="sex-female" onclick="setSex('female')">♀ Female</button>
+        </div>
+      </div>
+    </div>
+    <div class="p-section">
+      <div class="section-title">ACTIVITY LEVEL</div>
+      <button class="opt-btn" data-act="sedentary" onclick="setActivity('sedentary')"><div><div class="opt-title">Sedentary</div><div class="opt-desc">Desk job, little exercise</div></div><span class="opt-check">✓</span></button>
+      <button class="opt-btn" data-act="light" onclick="setActivity('light')"><div><div class="opt-title">Light</div><div class="opt-desc">1–3 days/week</div></div><span class="opt-check">✓</span></button>
+      <button class="opt-btn active" data-act="moderate" onclick="setActivity('moderate')"><div><div class="opt-title">Moderate</div><div class="opt-desc">3–5 days/week</div></div><span class="opt-check">✓</span></button>
+      <button class="opt-btn" data-act="active" onclick="setActivity('active')"><div><div class="opt-title">Active</div><div class="opt-desc">6–7 days/week</div></div><span class="opt-check">✓</span></button>
+      <button class="opt-btn" data-act="veryActive" onclick="setActivity('veryActive')"><div><div class="opt-title">Very Active</div><div class="opt-desc">Physical job + training</div></div><span class="opt-check">✓</span></button>
+    </div>
+    <div class="p-section">
+      <div class="section-title">MY GOAL</div>
+      <button class="opt-btn" data-goal="lose_fast" onclick="setGoal('lose_fast')"><div><div class="opt-title">Lose fast</div><div class="opt-desc">−750 kcal/day</div></div><span class="opt-check">✓</span></button>
+      <button class="opt-btn" data-goal="lose" onclick="setGoal('lose')"><div><div class="opt-title">Lose weight</div><div class="opt-desc">−500 kcal/day</div></div><span class="opt-check">✓</span></button>
+      <button class="opt-btn" data-goal="lose_slow" onclick="setGoal('lose_slow')"><div><div class="opt-title">Lose slowly</div><div class="opt-desc">−250 kcal/day</div></div><span class="opt-check">✓</span></button>
+      <button class="opt-btn active" data-goal="maintain" onclick="setGoal('maintain')"><div><div class="opt-title">Maintain</div><div class="opt-desc">TDEE</div></div><span class="opt-check">✓</span></button>
+      <button class="opt-btn" data-goal="gain" onclick="setGoal('gain')"><div><div class="opt-title">Gain weight</div><div class="opt-desc">+300 kcal/day</div></div><span class="opt-check">✓</span></button>
+    </div>
+    <div class="goal-preview" id="goal-preview">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--purple-dim);margin-bottom:6px">ESTIMATED DAILY GOAL</div>
+      <div class="serif" style="font-size:32px;font-weight:800;color:var(--purple);line-height:1"><span id="goal-preview-val">2000</span> <span style="font-size:13px;font-weight:300;color:var(--purple-dim)">kcal/day</span></div>
+      <div style="font-size:11px;color:var(--dim);margin-top:6px">Mifflin-St Jeor · activity · goal adjustment</div>
+    </div>
+    <button class="btn-save" id="save-btn" onclick="saveProfile()">Save Profile</button>
+    <button class="btn-ghost" onclick="showTab('tracker')" style="margin-bottom:24px">← Back to Tracker</button>
+  </div>
+
+</div><!-- end .body -->
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────
+const MEALS = ['Breakfast','Lunch','Dinner','Snack'];
+const MEAL_ICONS = {Breakfast:'🌅',Lunch:'☀️',Dinner:'🌙',Snack:'🍃'};
+const MEAL_TIMES = {Breakfast:'7–9 AM',Lunch:'12–2 PM',Dinner:'6–8 PM',Snack:'Anytime'};
+const LS_ENTRIES = 'ct_entries_';   // + dateKey
+const LS_HISTORY = 'ct_history';
+const LS_PROFILE = 'ct_profile';
+
+// ── State ──────────────────────────────────────────────────────────────────
+let entries = [];
+let history = {};   // { "2026-04-25": { entries:[], goal:2000 }, … }
+let currentMeal = 'Breakfast';
+let pendingPreview = null;
+let savedProfile = { name:'', age:'', sex:'male', weight:'', height:'', activity:'moderate', goal:'maintain', units:'metric' };
+let pSex='male', pActivity='moderate', pGoal='maintain';
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ── Persistence ────────────────────────────────────────────────────────────
+function saveToStorage() {
+  try {
+    localStorage.setItem(LS_ENTRIES + todayKey(), JSON.stringify(entries));
+    // also archive today into history
+    const goal = calcGoal(savedProfile);
+    history[todayKey()] = { entries: [...entries], goal };
+    localStorage.setItem(LS_HISTORY, JSON.stringify(history));
+  } catch(e) {}
+}
+
+function loadFromStorage() {
+  try {
+    const e = localStorage.getItem(LS_ENTRIES + todayKey());
+    if (e) entries = JSON.parse(e);
+    const h = localStorage.getItem(LS_HISTORY);
+    if (h) history = JSON.parse(h);
+    const p = localStorage.getItem(LS_PROFILE);
+    if (p) {
+      savedProfile = JSON.parse(p);
+      pSex = savedProfile.sex || 'male';
+      pActivity = savedProfile.activity || 'moderate';
+      pGoal = savedProfile.goal || 'maintain';
+      applyProfileToUI();
+    }
+  } catch(e) {}
+}
+
+function applyProfileToUI() {
+  document.getElementById('p-name').value = savedProfile.name || '';
+  document.getElementById('p-age').value = savedProfile.age || '';
+  document.getElementById('p-weight').value = savedProfile.weight || '';
+  document.getElementById('p-height').value = savedProfile.height || '';
+  document.getElementById('p-units').value = savedProfile.units || 'metric';
+  updateUnitsLabels();
+  setSex(pSex); setActivity(pActivity); setGoal(pGoal);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadFromStorage();
+(function init() {
+  const h = new Date().getHours();
+  if (h>=5&&h<11) currentMeal='Breakfast';
+  else if (h>=11&&h<15) currentMeal='Lunch';
+  else if (h>=17&&h<21) currentMeal='Dinner';
+  else currentMeal='Snack';
+
+  const d = new Date();
+  document.getElementById('dateline').textContent =
+    d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'}).toUpperCase();
+
+  renderMealPills();
+  renderAll();
+})();
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function showTab(t) {
+  ['tracker','log','history','profile'].forEach(id => {
+    document.getElementById('tab-'+id).style.display = id===t?'block':'none';
+    document.getElementById('hd-'+id).style.display = id===t?'block':'none';
+    document.getElementById('tb-'+id).classList.toggle('active', id===t);
+  });
+  if (t==='log') renderLog();
+  if (t==='history') renderHistory();
+  window.scrollTo(0,0);
+}
+
+// ── Progress ───────────────────────────────────────────────────────────────
+function renderProgress() {
+  const goal = calcGoal(savedProfile);
+  const total = entries.reduce((s,e)=>s+e.calories,0);
+  const pct = Math.min(total/goal*100,100);
+  const remaining = goal-total;
+  const over = total>goal;
+
+  document.getElementById('total-disp').textContent = total.toLocaleString();
+  document.getElementById('goal-disp').textContent = goal.toLocaleString();
+  document.getElementById('pct-disp').textContent = Math.round(pct)+'%';
+  const rem = document.getElementById('remaining-disp');
+  rem.textContent = over ? `${Math.abs(remaining).toLocaleString()} over` : `${remaining.toLocaleString()} left`;
+  rem.style.color = over?'var(--red)':'var(--green)';
+
+  const bar = document.getElementById('prog-bar');
+  bar.style.width = pct+'%';
+  bar.style.background = pct<50?'var(--green)':pct<80?'var(--yellow)':pct<100?'var(--orange)':'var(--red)';
+
+  document.getElementById('greeting').textContent = savedProfile.name ? `Hi, ${savedProfile.name} 👋` : 'Daily Tracker';
+  const sb = document.getElementById('setup-notice-btn');
+  sb.style.display = (savedProfile.age&&savedProfile.weight&&savedProfile.height)?'none':'inline-block';
+}
+
+// ── Meal pills ─────────────────────────────────────────────────────────────
+function renderMealPills() {
+  const c = document.getElementById('meal-pills'); c.innerHTML='';
+  MEALS.forEach(m => {
+    const cal = entries.filter(e=>e.meal===m).reduce((s,e)=>s+e.calories,0);
+    const btn = document.createElement('button');
+    btn.className='meal-pill'+(m===currentMeal?' active':'');
+    btn.innerHTML=`<span style="font-size:13px">${MEAL_ICONS[m]}</span><span class="pname">${m}</span>${cal>0?`<span class="pcal">${cal}</span>`:''}`;
+    btn.onclick=()=>{currentMeal=m;renderMealPills();updateMealLabel();};
+    c.appendChild(btn);
+  });
+  updateMealLabel();
+}
+function updateMealLabel(){
+  document.getElementById('meal-label').textContent=`LOGGING FOR — ${MEAL_ICONS[currentMeal]} ${currentMeal.toUpperCase()} · ${MEAL_TIMES[currentMeal]}`;
+}
+
+// ── Tracker entries ────────────────────────────────────────────────────────
+function renderTrackerEntries() {
+  const c=document.getElementById('tracker-entries'); c.innerHTML='';
+  let any=false;
+  MEALS.forEach(m=>{
+    const group=entries.filter(e=>e.meal===m);
+    if(!group.length) return;
+    any=true;
+    const mCal=group.reduce((s,e)=>s+e.calories,0);
+    const sec=document.createElement('div'); sec.style.marginBottom='14px';
+    sec.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:0 2px">
+        <div style="font-size:11px;letter-spacing:2px;color:var(--muted);font-weight:600">${MEAL_ICONS[m]} ${m.toUpperCase()}</div>
+        <div class="serif" style="font-size:14px">${mCal.toLocaleString()} kcal</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        ${group.map((e,i)=>`
+          <div class="entry-row" style="${i<group.length-1?'':'border-bottom:none'}">
+            <div style="flex:1;min-width:0">
+              <div class="entry-name">${e.dish}</div>
+              <div class="entry-sub">${e.portion} · ${e.time}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <div class="serif" style="font-size:16px">${e.calories}</div>
+              <button class="del-btn" onclick="removeEntry(${e.id})">×</button>
+            </div>
+          </div>`).join('')}
+      </div>`;
+    c.appendChild(sec);
+  });
+  document.getElementById('tracker-empty').style.display=any?'none':'block';
+  document.getElementById('reset-btn').style.display=any?'block':'none';
+}
+
+// ── Log tab ────────────────────────────────────────────────────────────────
+function renderLog() {
+  const goal=calcGoal(savedProfile);
+  const total=entries.reduce((s,e)=>s+e.calories,0);
+  const remaining=goal-total; const over=total>goal;
+  document.getElementById('log-sub').textContent=`${entries.length} ENTRIES · ${total.toLocaleString()} KCAL`;
+  document.getElementById('sum-total').textContent=total.toLocaleString();
+  document.getElementById('sum-goal').textContent=goal.toLocaleString();
+  document.getElementById('sum-label').textContent=over?'OVER':'LEFT';
+  const sr=document.getElementById('sum-rem');
+  sr.textContent=Math.abs(remaining).toLocaleString();
+  sr.style.color=over?'var(--red)':'var(--green)';
+
+  document.getElementById('meal-breakdown').innerHTML=MEALS.map(m=>{
+    const cal=entries.filter(e=>e.meal===m).reduce((s,e)=>s+e.calories,0);
+    const pct=goal>0?Math.min(cal/goal*100,100):0;
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--muted)">${MEAL_ICONS[m]} ${m}</span>
+        <span class="serif" style="font-size:12px">${cal>0?cal.toLocaleString()+' kcal':'—'}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+
+  const tl=document.getElementById('timeline'); tl.innerHTML='';
+  document.getElementById('log-empty').style.display=entries.length?'none':'block';
+  if(!entries.length) return;
+  const line=document.createElement('div'); line.className='tl-line'; tl.appendChild(line);
+  [...entries].sort((a,b)=>a.id-b.id).forEach(e=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;position:relative';
+    row.innerHTML=`
+      <div class="tl-dot">${MEAL_ICONS[e.meal]}</div>
+      <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div class="entry-name">${e.dish}</div>
+            <div class="entry-sub">${e.meal} · ${e.time} · ${e.portion}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+            <div class="serif" style="font-size:16px">${e.calories}</div>
+            <button class="del-btn" style="opacity:.6" onclick="removeEntry(${e.id});renderLog()">×</button>
+          </div>
+        </div>
+      </div>`;
+    tl.appendChild(row);
+  });
+}
+
+// ── History tab ────────────────────────────────────────────────────────────
+function renderHistory() {
+  const goal = calcGoal(savedProfile);
+  // merge today into history snapshot for display
+  const snap = { ...history };
+  if (entries.length) snap[todayKey()] = { entries:[...entries], goal };
+
+  const days = Object.keys(snap).sort((a,b)=>b.localeCompare(a)); // newest first
+  const histEmpty = document.getElementById('hist-empty');
+
+  if (!days.length) {
+    histEmpty.style.display='block';
+    document.getElementById('hist-chart-card').style.display='none';
+    document.getElementById('hist-stats').style.display='none';
+    document.getElementById('hist-days-list').innerHTML='';
+    return;
+  }
+  histEmpty.style.display='none';
+  document.getElementById('hist-chart-card').style.display='block';
+  document.getElementById('hist-stats').style.display='block';
+
+  // ── 7-day chart ──
+  const last7 = [];
+  for (let i=6;i>=0;i--) {
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const dayGoal = snap[k]?.goal || goal;
+    const cal = snap[k] ? snap[k].entries.reduce((s,e)=>s+e.calories,0) : 0;
+    const dow = d.toLocaleDateString('en-US',{weekday:'short'}).slice(0,2);
+    last7.push({k,cal,goal:dayGoal,dow,isToday:k===todayKey()});
+  }
+  const maxCal = Math.max(...last7.map(d=>d.cal), goal, 1);
+  const chartEl = document.getElementById('hist-chart');
+  const labelsEl = document.getElementById('hist-chart-labels');
+  chartEl.innerHTML=''; labelsEl.innerHTML='';
+  last7.forEach(d=>{
+    const heightPct = d.cal>0 ? Math.max((d.cal/maxCal)*100,4) : 3;
+    const goalPct = Math.min((d.goal/maxCal)*100,100);
+    const color = d.cal===0?'var(--border)':d.cal<=d.goal?'var(--green)':d.cal<=d.goal*1.1?'var(--yellow)':'var(--red)';
+    const col=document.createElement('div'); col.className='chart-col';
+    col.innerHTML=`
+      <div style="flex:1;width:100%;display:flex;align-items:flex-end;position:relative">
+        <div style="width:100%;height:${heightPct}%;background:${color};border-radius:4px 4px 0 0;opacity:${d.isToday?1:0.7}"></div>
+      </div>`;
+    chartEl.appendChild(col);
+    const lbl=document.createElement('div');
+    lbl.style.cssText='flex:1;text-align:center;font-size:9px;color:var(--dim);margin-top:3px';
+    lbl.textContent=d.isToday?'Now':d.dow;
+    if(d.isToday) lbl.style.color='var(--purple)';
+    labelsEl.appendChild(lbl);
+  });
+
+  // ── Stats ──
+  const loggedDays = days.filter(k=>snap[k].entries.length>0);
+  const totals = loggedDays.map(k=>snap[k].entries.reduce((s,e)=>s+e.calories,0));
+  const avg = totals.length ? Math.round(totals.reduce((a,b)=>a+b,0)/totals.length) : 0;
+  // best = day closest to goal without going over, or lowest over
+  let bestDay = null, bestDiff = Infinity;
+  loggedDays.forEach(k=>{
+    const g=snap[k].goal||goal;
+    const cal=snap[k].entries.reduce((s,e)=>s+e.calories,0);
+    const diff=Math.abs(cal-g);
+    if(diff<bestDiff){bestDiff=diff;bestDay={cal,k};}
+  });
+  // streak: consecutive days with entries up to today
+  let streak=0;
+  for(let i=0;;i++){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(snap[k]&&snap[k].entries.length>0) streak++;
+    else break;
+  }
+
+  document.getElementById('hist-avg').textContent=avg?avg.toLocaleString()+'':'—';
+  document.getElementById('hist-best').textContent=bestDay?bestDay.cal.toLocaleString():'—';
+  document.getElementById('hist-days').textContent=loggedDays.length;
+  document.getElementById('hist-streak').textContent=streak+'d';
+  document.getElementById('hist-sub').textContent=`${loggedDays.length} DAY${loggedDays.length!==1?'S':''} LOGGED`;
+
+  // ── Day accordion ──
+  const list=document.getElementById('hist-days-list'); list.innerHTML='';
+  days.forEach(k=>{
+    const dayData=snap[k];
+    const dayCal=dayData.entries.reduce((s,e)=>s+e.calories,0);
+    const dayGoal=dayData.goal||goal;
+    const over=dayCal>dayGoal;
+    const pct=Math.min(dayCal/dayGoal*100,100);
+    const barColor=pct<50?'var(--green)':pct<80?'var(--yellow)':pct<100?'var(--orange)':'var(--red)';
+    const isToday=k===todayKey();
+
+    // format date label
+    const [y,mo,dd]=k.split('-');
+    const dateObj=new Date(+y,+mo-1,+dd);
+    const dateLabel=isToday?'Today':dateObj.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+
+    const div=document.createElement('div'); div.className='hist-day';
+    div.innerHTML=`
+      <div class="hist-day-header" onclick="toggleHistDay(this)">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:${isToday?'var(--purple)':'var(--text)'}">${dateLabel}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">${dayData.entries.length} items · goal ${dayGoal.toLocaleString()}</div>
+          <div style="margin-top:6px;background:var(--border);border-radius:99px;height:4px;width:120px;overflow:hidden">
+            <div style="height:100%;border-radius:99px;width:${pct}%;background:${barColor}"></div>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:12px">
+          <div class="serif" style="font-size:20px;font-weight:700;color:${over?'var(--red)':dayCal===0?'var(--dim)':'var(--text)'}">${dayCal.toLocaleString()}</div>
+          <div style="font-size:10px;color:${over?'var(--red)':'var(--muted)'};margin-top:2px">${over?'+'+Math.abs(dayGoal-dayCal).toLocaleString()+' over':dayCal===0?'no data':Math.abs(dayGoal-dayCal).toLocaleString()+' left'}</div>
+          <div style="font-size:16px;margin-top:4px;color:var(--dim)" class="chevron">›</div>
+        </div>
+      </div>
+      <div class="hist-day-body">
+        ${dayData.entries.length===0
+          ? '<div style="padding:14px 16px;font-size:13px;color:var(--dim);font-style:italic">No entries</div>'
+          : dayData.entries.map(e=>`
+            <div class="hist-entry">
+              <div style="flex:1;min-width:0">
+                <div class="entry-name">${e.dish}</div>
+                <div class="entry-sub">${MEAL_ICONS[e.meal]||''} ${e.meal} · ${e.time||''}</div>
+              </div>
+              <div class="serif" style="font-size:15px;flex-shrink:0;margin-left:10px">${e.calories}</div>
+            </div>`).join('')}
+        ${isToday?`<div style="padding:10px 16px;border-top:1px solid var(--border)"><button class="btn-ghost" style="font-size:11px" onclick="showTab('tracker')">Edit today →</button></div>`:''}
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function toggleHistDay(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  const open = body.classList.toggle('open');
+  chevron.style.transform = open ? 'rotate(90deg)' : '';
+  chevron.style.transition = 'transform .2s';
+}
+
+// ── Entry actions ──────────────────────────────────────────────────────────
+function removeEntry(id) {
+  entries=entries.filter(e=>e.id!==id);
+  saveToStorage(); renderAll();
+}
+
+function resetDay() {
+  if(confirm('Reset all entries for today?')){
+    entries=[];
+    saveToStorage(); renderAll();
+  }
+}
+
+function hhmm(){return new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
+
+function confirmAdd() {
+  if(!pendingPreview) return;
+  entries.push({id:Date.now(),...pendingPreview,meal:currentMeal,time:hhmm()});
+  pendingPreview=null;
+  document.getElementById('preview-box').classList.remove('show');
+  document.getElementById('food-input').value='';
+  saveToStorage(); renderAll();
+}
+
+function renderAll(){renderProgress();renderMealPills();renderTrackerEntries();}
+
+// ── AI estimate ────────────────────────────────────────────────────────────
+async function doEstimate() {
+  const dish=document.getElementById('food-input').value.trim();
+  if(!dish) return;
+  const btn=document.getElementById('est-btn');
+  const errEl=document.getElementById('err-msg');
+  const pb=document.getElementById('preview-box');
+  btn.disabled=true; btn.innerHTML='<span class="blink">Estimating…</span>';
+  errEl.classList.remove('show'); pb.classList.remove('show');
+  try {
+    const ctx=savedProfile.age?`User:${savedProfile.age}yo ${savedProfile.sex},${savedProfile.weight}kg,goal:${savedProfile.goal}.`:'';
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
+        system:`Nutrition expert. Estimate calories. ${ctx} Return ONLY raw JSON: {"calories":<number>,"portion":"<brief>","note":"<1 sentence>"}`,
+        messages:[{role:'user',content:dish}]}),
+    });
+    const data=await res.json();
+    const text=(data.content||[]).map(b=>b.text||'').join('');
+    const r=JSON.parse(text.replace(/```json|```/g,'').trim());
+    pendingPreview={dish,calories:r.calories,portion:r.portion};
+    document.getElementById('prev-cal').textContent=r.calories;
+    document.getElementById('prev-portion').textContent=r.portion;
+    document.getElementById('prev-note').textContent=r.note;
+    pb.classList.add('show');
+  } catch(e){errEl.classList.add('show');}
+  btn.disabled=false; btn.textContent='Estimate Calories →';
+}
+
+function onInputKey(e){
+  if(e.key==='Enter'){pendingPreview?confirmAdd():doEstimate();}
+  if(e.key==='Escape'){pendingPreview=null;document.getElementById('preview-box').classList.remove('show');document.getElementById('food-input').value='';}
+}
+
+// ── Profile ────────────────────────────────────────────────────────────────
+function setSex(s){pSex=s;document.getElementById('sex-male').classList.toggle('active',s==='male');document.getElementById('sex-female').classList.toggle('active',s==='female');updateGoalPreview();}
+function setActivity(a){pActivity=a;document.querySelectorAll('[data-act]').forEach(b=>b.classList.toggle('active',b.dataset.act===a));updateGoalPreview();}
+function setGoal(g){pGoal=g;document.querySelectorAll('[data-goal]').forEach(b=>b.classList.toggle('active',b.dataset.goal===g));updateGoalPreview();}
+function updateUnitsLabels(){const m=document.getElementById('p-units').value==='metric';document.getElementById('p-weight-lbl').textContent=`Weight (${m?'kg':'lbs'})`;document.getElementById('p-height-lbl').textContent=`Height (${m?'cm':'in'})`;}
+function calcGoal(p){const w=parseFloat(p.weight),h=parseFloat(p.height),a=parseFloat(p.age);if(!w||!h||!a)return 2000;const bmr=p.sex==='male'?10*w+6.25*h-5*a+5:10*w+6.25*h-5*a-161;const mult={sedentary:1.2,light:1.375,moderate:1.55,active:1.725,veryActive:1.9}[p.activity]||1.2;const adj={lose_fast:-750,lose:-500,lose_slow:-250,maintain:0,gain:300}[p.goal]||0;return Math.round(bmr*mult+adj);}
+function updateGoalPreview(){const p={age:document.getElementById('p-age').value,weight:document.getElementById('p-weight').value,height:document.getElementById('p-height').value,sex:pSex,activity:pActivity,goal:pGoal};const pv=document.getElementById('goal-preview');if(p.age&&p.weight&&p.height){pv.classList.add('show');document.getElementById('goal-preview-val').textContent=calcGoal(p).toLocaleString();}else pv.classList.remove('show');}
+
+function saveProfile(){
+  savedProfile={name:document.getElementById('p-name').value,age:document.getElementById('p-age').value,weight:document.getElementById('p-weight').value,height:document.getElementById('p-height').value,units:document.getElementById('p-units').value,sex:pSex,activity:pActivity,goal:pGoal};
+  try{localStorage.setItem(LS_PROFILE,JSON.stringify(savedProfile));}catch(e){}
+  const btn=document.getElementById('save-btn');
+  btn.textContent='✓ Saved!';btn.classList.add('saved');
+  setTimeout(()=>{btn.textContent='Save Profile';btn.classList.remove('saved');},2000);
+  renderAll();
+}
+</script>
+</body>
+</html>
